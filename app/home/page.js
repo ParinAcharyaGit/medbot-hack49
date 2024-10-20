@@ -112,6 +112,7 @@ const PatientDashboard = () => {
                         aria-label="menu"
                     >
                         <MenuIcon />
+                        Welcome to Medbot
                     </IconButton>
                 </Toolbar>
             </AppBar>
@@ -127,7 +128,7 @@ const PatientDashboard = () => {
                         <ListItemText primary="MedBot" />
                     </ListItem>
                     <hr />
-                    <ListItem button className="cursor-pointer" onClick={() => handleMenuItemClick('/get-treatment-plan')}>
+                    <ListItem button className="cursor-pointer" onClick={() => handleMenuItemClick('/home/get-treatment-plan')}>
                         <ListItemText primary="Get Treatment Plan" />
                     </ListItem>
                     <hr />

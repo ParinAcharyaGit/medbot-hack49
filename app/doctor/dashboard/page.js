@@ -1,5 +1,8 @@
 'use client';
 
+// Need to sure that patient appointments are reflected here 
+// and categorized into scheduled, pending and cancelled 
+
 import React, { useEffect, useState } from 'react';
 import { db } from '../../../firebase';
 import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
@@ -68,7 +71,7 @@ const DoctorDashboard = () => {
     };
 
     return (
-        <div style={{ backgroundColor: 'black', height: '100vh', color: 'white' }}>
+        <div style={{ backgroundColor: 'white', height: '100vh', color: 'white' }}>
             <AppBar position="static" sx={{ backgroundColor: 'black' }}>
                 <Toolbar>
                     <Typography>MedBot</Typography>
