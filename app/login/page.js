@@ -38,7 +38,7 @@ export default function PatientLogin() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-gray-700">
       {/* AppBar */}
       <AppBar position="static" sx={{ backgroundColor: "black", color: "#d81b60" }}>
         <Toolbar className="flex justify-between">
@@ -90,10 +90,10 @@ export default function PatientLogin() {
           </Button>
 
           <Typography className="mt-4 text-center">
-            Don't have an account?{" "}
+            Don't have an account yet?{" "}
             <Link href="/signup" passHref>
               <span style={{ color: "#d81b60", fontWeight: "bold", cursor: "pointer" }}>
-                Register
+                Register here 
               </span>
             </Link>
           </Typography>

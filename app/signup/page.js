@@ -59,7 +59,7 @@ export default function PatientSignup() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
+    <div className="flex flex-col h-screen bg-gray-700">
       {/* Toast Container */}
       <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={true} closeOnClick pauseOnHover draggable />
 
@@ -82,7 +82,7 @@ export default function PatientSignup() {
           onSubmit={handleSubmit}
         >
           <Typography variant="h4" className="mb-4 text-pink-600 font-bold" align="center">
-            Patient Signup
+            Patient sign-up
           </Typography>
 
           <TextField
@@ -136,7 +136,7 @@ export default function PatientSignup() {
             fullWidth
             sx={{ backgroundColor: "#d81b60", color: "white", mt: 2 }}
           >
-            Signup
+            Create account
           </Button>
 
           <Typography className="mt-4 text-center">

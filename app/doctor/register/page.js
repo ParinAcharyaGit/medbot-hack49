@@ -154,7 +154,7 @@ export default function DoctorRegistration() {
             fullWidth
             sx={{ backgroundColor: "#d81b60", color: "white", mt: 2 }}
           >
-            Register
+            Create account
           </Button>
 
           <Typography className="mt-4 text-center">
