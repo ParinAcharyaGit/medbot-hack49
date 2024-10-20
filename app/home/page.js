@@ -14,8 +14,13 @@ import {
     Card,
     CardContent,
     Grid,
+    TextField,
+    InputAdornment,
+    Snackbar,
+    Alert
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
+import SearchIcon from '@mui/icons-material/Search';
 import { useRouter } from 'next/navigation';
 import { db } from '../../firebase';
 import { collection, getDocs } from 'firebase/firestore';
@@ -23,6 +28,9 @@ import { collection, getDocs } from 'firebase/firestore';
 const PatientDashboard = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [doctors, setDoctors] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [filteredDoctors, setFilteredDoctors] = useState([]);
+    const [noResults, setNoResults] = useState(false);
     const router = useRouter();
 
     const toggleDrawer = (open) => () => {
@@ -34,7 +42,6 @@ const PatientDashboard = () => {
         setDrawerOpen(false);
     };
 
-    // Fetch doctors from Firestore
     useEffect(() => {
         const fetchDoctors = async () => {
             try {
@@ -45,6 +52,7 @@ const PatientDashboard = () => {
                     ...doc.data(),
                 }));
                 setDoctors(doctorList);
+                setFilteredDoctors(doctorList);
             } catch (error) {
                 console.error("Error fetching doctors:", error);
             }
@@ -53,10 +61,24 @@ const PatientDashboard = () => {
         fetchDoctors();
     }, []);
 
+    const handleSearch = (e) => {
+        const term = e.target.value.toLowerCase();
+        setSearchTerm(term);
+
+        const filtered = doctors.filter((doctor) =>
+            doctor.name.toLowerCase().includes(term) ||
+            doctor.clinicAddress.toLowerCase().includes(term) ||
+            doctor.specialization.toLowerCase().includes(term)
+        );
+
+        setFilteredDoctors(filtered);
+        setNoResults(filtered.length === 0 && term !== "");
+    };
+
     return (
-        <div>
+        <div className='bg-black h-screen'>
             {/* AppBar */}
-            <AppBar position="static" sx={{ backgroundColor: "black" }}>
+            <AppBar position="static" sx={{ backgroundColor: "#d81b60" }}>
                 <Toolbar>
                     <IconButton
                         edge="start"
@@ -66,45 +88,89 @@ const PatientDashboard = () => {
                     >
                         <MenuIcon />
                     </IconButton>
-                    <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                        MedBot
-                    </Typography>
                 </Toolbar>
             </AppBar>
 
             {/* Drawer Menu */}
             <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
                 <List>
-                    <ListItem button onClick={() => handleMenuItemClick('/patient')}>
+                    <ListItem>
+                        <Typography variant="h6" fontWeight="bold" sx={{ paddingLeft: 5 }}>MENU</Typography>
+                    </ListItem>
+                    <hr />
+                    <ListItem button className="cursor-pointer" onClick={() => handleMenuItemClick('/patient')}>
                         <ListItemText primary="MedBot" />
                     </ListItem>
-                    <ListItem button onClick={() => handleMenuItemClick('/get-treatment-plan')}>
+                    <hr />
+                    <ListItem button className="cursor-pointer" onClick={() => handleMenuItemClick('/get-treatment-plan')}>
                         <ListItemText primary="Get Treatment Plan" />
                     </ListItem>
-                    <ListItem button onClick={() => handleMenuItemClick('/appointments')}>
+                    <hr />
+                    <ListItem button className="cursor-pointer" onClick={() => handleMenuItemClick('/appointments')}>
                         <ListItemText primary="Appointments" />
+                    </ListItem>
+                    <hr />
+                    <ListItem button className="cursor-pointer" onClick={() => {}}>
+                        <ListItemText primary="Logout" />
                     </ListItem>
                 </List>
             </Drawer>
 
             {/* Main Content */}
             <div style={{ padding: '20px' }}>
-                <Typography variant="h4" gutterBottom>
-                    Available Doctors
-                </Typography>
+                {/* Search Bar */}
+                <div style={{display: 'flex', justifyContent: 'center' }}>
+                <TextField
+                    placeholder="Search by Name, Address, or Specialization"
+                    value={searchTerm}
+                    onChange={handleSearch}
+                    variant="outlined"
+                    sx={{
+                        borderRadius: '20px',
+                        marginBottom: '20px',
+                        backgroundColor: '#3A3A3A',
+                        width: '400px',
+                        '& .MuiInputBase-input': {
+                            color: 'white',
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                            color: 'white',
+                        },
+                        '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                                borderColor: 'transparent',
+                            },
+                            '&:hover fieldset': {
+                                borderColor: 'transparent',
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: 'transparent',
+                            },
+                        },
+                    }}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <SearchIcon sx={{ color: 'white' }} />
+                            </InputAdornment>
+                        ),
+                    }}
+                />
+                </div>
+
+                {/* Doctors Cards */}
                 <Grid container spacing={3}>
-                    {doctors.map((doctor) => (
+                    {filteredDoctors.map((doctor) => (
                         <Grid item xs={12} sm={6} md={4} key={doctor.id}>
                             <Card>
                                 <CardContent>
                                     <Typography variant="h5">{doctor.name}</Typography>
-                                    <Typography color="textSecondary">{doctor.clinicAddress}</Typography>
-                                    <Typography color="textSecondary">{doctor.specialization}</Typography>
+                                    <Typography color="textSecondary">Clinic Address: {doctor.clinicAddress}</Typography>
+                                    <Typography color="textSecondary">Specialization: {doctor.specialization}</Typography>
                                     <Button
                                         variant="contained"
-                                        color="primary"
                                         onClick={() => alert(`Requesting appointment with ${doctor.name}`)}
-                                        sx={{ mt: 2 }}
+                                        sx={{ mt: 2, backgroundColor: "#d81b60" }}
                                     >
                                         Request Appointment
                                     </Button>
@@ -113,6 +179,19 @@ const PatientDashboard = () => {
                         </Grid>
                     ))}
                 </Grid>
+
+                {/* No Results Message */}
+                {noResults && (
+                    <Snackbar
+                        open={noResults}
+                        autoHideDuration={6000}
+                        onClose={() => setNoResults(false)}
+                    >
+                        <Alert onClose={() => setNoResults(false)} severity="info">
+                            No records found. Please try a different search.
+                        </Alert>
+                    </Snackbar>
+                )}
             </div>
         </div>
     );
