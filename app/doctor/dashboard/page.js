@@ -1,132 +1,116 @@
-'use client'
+'use client';
 
-// medbot-hack49/app/doctor-dashboard/page.js
-
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Import useRouter
+import React, { useEffect, useState } from 'react';
+import { db } from '../../../firebase';
+import { collection, getDocs, query, where, updateDoc, doc } from 'firebase/firestore';
+import { Card, CardContent, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, AppBar, Toolbar } from '@mui/material';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../../../firebase';
 
 const DoctorDashboard = () => {
-    const router = useRouter(); // Initialize useRouter
+    const [appointments, setAppointments] = useState([]);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedAppointment, setSelectedAppointment] = useState(null);
+    const [time, setTime] = useState("");
+    const [timezone, setTimezone] = useState("");
+    const [doctorId, setDoctorId] = useState("");
 
-    // Sample appointment data (you can replace this with dynamic data later)
-    const [appointments, setAppointments] = useState({
-        pending: [
-            { id: 1, patient: 'John Doe', date: '2024-10-20', time: '10:00 AM' },
-            { id: 2, patient: 'Jane Smith', date: '2024-10-22', time: '02:00 PM' },
-        ],
-        scheduled: [
-            { id: 3, patient: 'Mike Ross', date: '2024-10-21', time: '01:00 PM' },
-        ],
-        cancelled: [
-            { id: 4, patient: 'Rachel Zane', date: '2024-10-19', time: '11:00 AM' },
-        ],
-    });
-
-    // Function to handle appointment status update
-    const updateAppointmentStatus = (id, newStatus) => {
-        // Move appointment from its current status to the new status
-        const updatedAppointments = { ...appointments };
-        let movedAppointment;
-
-        // Find and remove the appointment from its current category
-        for (const status in updatedAppointments) {
-            const index = updatedAppointments[status].findIndex(app => app.id === id);
-            if (index !== -1) {
-                movedAppointment = updatedAppointments[status].splice(index, 1)[0];
-                break;
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                setDoctorId(user.uid);
+            } else {
+                console.log("No user is signed in");
             }
-        }
+        });
 
-        // Add the appointment to the new status category
-        if (movedAppointment) {
-            updatedAppointments[newStatus].push(movedAppointment);
-            setAppointments(updatedAppointments);
+        const fetchAppointments = async () => {
+            if (!doctorId) return;
+            
+            const appointmentsRef = collection(db, 'appointments');
+            const q = query(appointmentsRef, where('doctorId', '==', doctorId));
+            const snapshot = await getDocs(q);
+            const appointmentList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setAppointments(appointmentList);
+        };
+
+        fetchAppointments();
+        return unsubscribe;
+    }, [doctorId]);
+
+    const handleConfirmAppointment = (appointment) => {
+        setSelectedAppointment(appointment);
+        setDialogOpen(true);
+    };
+
+    const handleSaveTime = async () => {
+        if (selectedAppointment) {
+            const appointmentRef = doc(db, 'appointments', selectedAppointment.id);
+            await updateDoc(appointmentRef, {
+                confirmed: true,
+                time, 
+                timezone
+            });
+            setAppointments(prev => 
+                prev.map(appointment => 
+                    appointment.id === selectedAppointment.id ? { ...appointment, confirmed: true, time, timezone } : appointment
+                )
+            );
+            setDialogOpen(false);
+            setSelectedAppointment(null);
+            setTime("");
+            setTimezone("");
         }
     };
 
-    // Update the button click handler to include redirection
-    const handleConfirmAppointment = (id) => {
-        updateAppointmentStatus(id, 'scheduled'); // Update status
-        router.push('/doctor-dashboard/confirm'); // Redirect to /doctor-dashboard/confirm
+    const handleLogout = () => {
+        auth.signOut();
     };
 
     return (
-        <div className="h-screen p-6">
-            <h1 className="text-2xl font-bold mb-6">Doctor Dashboard</h1>
-
-            <div className="grid grid-cols-3 gap-4">
-                {/* Pending Appointments */}
-                <div>
-                    <h2 className="text-xl font-semibold mb-4">Pending Appointments</h2>
-                    <div className="space-y-4">
-                        {appointments.pending.length ? (
-                            appointments.pending.map(app => (
-                                <div key={app.id} className="p-4 bg-yellow-100 rounded shadow">
-                                    <p>Patient: {app.patient}</p>
-                                    <p>Date: {app.date}</p>
-                                    <p>Time: {app.time}</p>
-                                    <button
-                                        onClick={() => handleConfirmAppointment(app.id)} // Update to use new handler
-                                        className="mt-2 bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600"
-                                    >
-                                        Confirm Appointment
-                                    </button>
-                                </div>
-                            ))
+        <div style={{ backgroundColor: 'black', height: '100vh', color: 'white' }}>
+            <AppBar position="static" sx={{ backgroundColor: 'black' }}>
+                <Toolbar>
+                    <Typography>MedBot</Typography>
+                    <div style={{ flexGrow: 1 }} />
+                    <Button color="inherit" onClick={handleLogout}>Logout</Button>
+                </Toolbar>
+            </AppBar>
+            {appointments.map((appointment) => (
+                <Card key={appointment.id} style={{ margin: '10px 0', backgroundColor: '#333' }}>
+                    <CardContent>
+                        <Typography variant="h5">Patient: {appointment.patientName}</Typography>
+                        <Typography variant="body1">Reason: {appointment.reason}</Typography>
+                        {appointment.confirmed ? (
+                            <Typography variant="body1">Time: {appointment.time} ({appointment.timezone})</Typography>
                         ) : (
-                            <p>No pending appointments</p>
+                            <Button variant="contained" onClick={() => handleConfirmAppointment(appointment)}>Confirm Appointment</Button>
                         )}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
+            ))}
 
-                {/* Scheduled Appointments */}
-                <div>
-                    <h2 className="text-xl font-semibold mb-4">Scheduled Appointments</h2>
-                    <div className="space-y-4">
-                        {appointments.scheduled.length ? (
-                            appointments.scheduled.map(app => (
-                                <div key={app.id} className="p-4 bg-blue-100 rounded shadow">
-                                    <p>Patient: {app.patient}</p>
-                                    <p>Date: {app.date}</p>
-                                    <p>Time: {app.time}</p>
-                                    <button
-                                        onClick={() => updateAppointmentStatus(app.id, 'cancelled')}
-                                        className="mt-2 bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
-                                    >
-                                        Cancel Appointment
-                                    </button>
-                                </div>
-                            ))
-                        ) : (
-                            <p>No scheduled appointments</p>
-                        )}
-                    </div>
-                </div>
-
-                {/* Cancelled Appointments */}
-                <div>
-                    <h2 className="text-xl font-semibold mb-4">Cancelled Appointments</h2>
-                    <div className="space-y-4">
-                        {appointments.cancelled.length ? (
-                            appointments.cancelled.map(app => (
-                                <div key={app.id} className="p-4 bg-red-100 rounded shadow">
-                                    <p>Patient: {app.patient}</p>
-                                    <p>Date: {app.date}</p>
-                                    <p>Time: {app.time}</p>
-                                    <button
-                                        onClick={() => updateAppointmentStatus(app.id, 'pending')}
-                                        className="mt-2 bg-yellow-500 text-white py-1 px-3 rounded hover:bg-yellow-600"
-                                    >
-                                        Move to Pending
-                                    </button>
-                                </div>
-                            ))
-                        ) : (
-                            <p>No cancelled appointments</p>
-                        )}
-                    </div>
-                </div>
-            </div>
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+                <DialogTitle>Set Appointment Time</DialogTitle>
+                <DialogContent>
+                    <TextField 
+                        label="Time" 
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        fullWidth
+                    />
+                    <TextField 
+                        label="Time Zone" 
+                        value={timezone}
+                        onChange={(e) => setTimezone(e.target.value)}
+                        fullWidth
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDialogOpen(false)} color="secondary">Cancel</Button>
+                    <Button onClick={handleSaveTime} color="primary">Save</Button>
+                </DialogActions>
+            </Dialog>
         </div>
     );
 };
