@@ -1,29 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import {
-    AppBar,
-    Toolbar,
-    Typography,
-    IconButton,
-    Drawer,
-    List,
-    ListItem,
-    ListItemText,
-    Button,
-    Card,
-    CardContent,
-    Grid,
-    TextField,
-    InputAdornment,
-    Snackbar,
-    Alert
-} from '@mui/material';
+import { AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem, ListItemText, Button, Card, CardContent, Grid, TextField, InputAdornment, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import { useRouter } from 'next/navigation';
 import { db } from '../../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { auth } from "../../firebase";
+import { collection, getDocs, addDoc } from 'firebase/firestore';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const PatientDashboard = () => {
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -31,6 +17,11 @@ const PatientDashboard = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [filteredDoctors, setFilteredDoctors] = useState([]);
     const [noResults, setNoResults] = useState(false);
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [selectedDoctor, setSelectedDoctor] = useState(null);
+    const [patientName, setPatientName] = useState("");
+    const [reason, setReason] = useState("");
+    const [appointmentDate, setAppointmentDate] = useState(null);
     const router = useRouter();
 
     const toggleDrawer = (open) => () => {
@@ -73,6 +64,40 @@ const PatientDashboard = () => {
 
         setFilteredDoctors(filtered);
         setNoResults(filtered.length === 0 && term !== "");
+    };
+
+    const handleRequestAppointment = (doctor) => {
+        setSelectedDoctor(doctor);
+        setDialogOpen(true);
+    };
+
+    const handleSubmitAppointment = async () => {
+        const user = auth.currentUser;
+
+        if (!user) {
+            alert("You must be logged in to request an appointment.");
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, 'appointments'), {
+                doctorId: selectedDoctor.id,
+                doctorName: selectedDoctor.name,
+                patientName,
+                reason,
+                appointmentDate: appointmentDate.toISOString(),
+                patientId: user.uid,
+            });
+
+            setDialogOpen(false);
+            setPatientName("");
+            setReason("");
+            setAppointmentDate(null);
+
+            alert("Appointment requested successfully!");
+        } catch (error) {
+            console.error("Error saving appointment:", error);
+        }
     };
 
     return (
@@ -169,7 +194,7 @@ const PatientDashboard = () => {
                                     <Typography color="textSecondary">Specialization: {doctor.specialization}</Typography>
                                     <Button
                                         variant="contained"
-                                        onClick={() => alert(`Requesting appointment with ${doctor.name}`)}
+                                        onClick={() => handleRequestAppointment(doctor)}
                                         sx={{ mt: 2, backgroundColor: "#d81b60" }}
                                     >
                                         Request Appointment
@@ -192,6 +217,48 @@ const PatientDashboard = () => {
                         </Alert>
                     </Snackbar>
                 )}
+
+                {/* Dialog for requesting appointment */}
+                <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+                    <DialogTitle>Request Appointment</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            label="Patient Name"
+                            fullWidth
+                            value={patientName}
+                            onChange={(e) => setPatientName(e.target.value)}
+                            margin="normal"
+                        />
+                        <TextField
+                            label="Reason for Appointment"
+                            fullWidth
+                            value={reason}
+                            onChange={(e) => setReason(e.target.value)}
+                            margin="normal"
+                        />
+                        <DatePicker
+                            label="Select Appointment Date"
+                            selected={appointmentDate}
+                            onChange={(newDate) => setAppointmentDate(newDate)}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    fullWidth
+                                    margin="normal"
+                                />
+                            )}
+                        />
+
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setDialogOpen(false)} color="secondary">
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSubmitAppointment} color="primary">
+                            Submit
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </div>
         </div>
     );
