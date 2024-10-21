@@ -25,22 +25,19 @@ const PatientDashboard = () => {
     const router = useRouter();
     const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
-// Function to handle logout
 const handleLogout = async () => {
     try {
         await auth.signOut();
-        router.push('/login'); // Redirect to login page after logout
+        router.push('/');
     } catch (error) {
         console.error("Error logging out:", error);
     }
 };
 
-// Function to open logout confirmation dialog
 const openLogoutDialog = () => {
     setLogoutDialogOpen(true);
 };
 
-// Function to close logout confirmation dialog
 const closeLogoutDialog = () => {
     setLogoutDialogOpen(false);
 };
