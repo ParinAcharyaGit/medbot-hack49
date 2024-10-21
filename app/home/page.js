@@ -23,6 +23,27 @@ const PatientDashboard = () => {
     const [reason, setReason] = useState("");
     const [appointmentDate, setAppointmentDate] = useState(null);
     const router = useRouter();
+    const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+
+// Function to handle logout
+const handleLogout = async () => {
+    try {
+        await auth.signOut();
+        router.push('/login'); // Redirect to login page after logout
+    } catch (error) {
+        console.error("Error logging out:", error);
+    }
+};
+
+// Function to open logout confirmation dialog
+const openLogoutDialog = () => {
+    setLogoutDialogOpen(true);
+};
+
+// Function to close logout confirmation dialog
+const closeLogoutDialog = () => {
+    setLogoutDialogOpen(false);
+};
 
     const toggleDrawer = (open) => () => {
         setDrawerOpen(open);
@@ -112,8 +133,8 @@ const PatientDashboard = () => {
                         aria-label="menu"
                     >
                         <MenuIcon />
-                        Welcome to Medbot
                     </IconButton>
+                    <Typography variant="h6" fontWeight="bold" sx={{ flexGrow: 1, textAlign: "center" }}>Welcome to Medbot</Typography>
                 </Toolbar>
             </AppBar>
 
@@ -124,7 +145,7 @@ const PatientDashboard = () => {
                         <Typography variant="h6" fontWeight="bold" sx={{ paddingLeft: 5 }}>MENU</Typography>
                     </ListItem>
                     <hr />
-                    <ListItem button className="cursor-pointer" onClick={() => handleMenuItemClick('/patient')}>
+                    <ListItem button className="cursor-pointer" onClick={() => handleMenuItemClick('/home/chat')}>
                         <ListItemText primary="MedBot" />
                     </ListItem>
                     <hr />
@@ -136,11 +157,26 @@ const PatientDashboard = () => {
                         <ListItemText primary="Appointments" />
                     </ListItem>
                     <hr />
-                    <ListItem button className="cursor-pointer" onClick={() => {}}>
+                    <ListItem button className="cursor-pointer" onClick={openLogoutDialog}>
                         <ListItemText primary="Logout" />
                     </ListItem>
                 </List>
             </Drawer>
+
+            <Dialog open={logoutDialogOpen} onClose={closeLogoutDialog}>
+            <DialogTitle>Confirm Logout</DialogTitle>
+            <DialogContent>
+                <Typography>Do you want to logout?</Typography>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={closeLogoutDialog} color="secondary">
+                    Cancel
+                </Button>
+                <Button onClick={handleLogout} color="primary">
+                    Yes, Logout
+                </Button>
+            </DialogActions>
+        </Dialog>
 
             {/* Main Content */}
             <div style={{ padding: '20px' }}>
