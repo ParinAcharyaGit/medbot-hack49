@@ -153,10 +153,6 @@ const closeLogoutDialog = () => {
                         <ListItemText primary="Get Treatment Plan" />
                     </ListItem>
                     <hr />
-                    <ListItem button className="cursor-pointer" onClick={() => handleMenuItemClick('/appointments')}>
-                        <ListItemText primary="Appointments" />
-                    </ListItem>
-                    <hr />
                     <ListItem button className="cursor-pointer" onClick={openLogoutDialog}>
                         <ListItemText primary="Logout" />
                     </ListItem>
