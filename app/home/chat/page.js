@@ -87,7 +87,7 @@ const Home = () => {
             <ArrowBackIcon sx={{ color: '#d81b60', fontSize: 'larger' }} />
           </IconButton>
           <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center', fontWeight: 'bold', color: '#d81b60' }}>
-            Get Your Treatment Plan
+            Ask Our AI
           </Typography>
         </Toolbar>
       </AppBar>
